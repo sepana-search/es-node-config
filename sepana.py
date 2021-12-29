@@ -11,7 +11,7 @@ parser.add_argument('--api_key', help='Sepana API key', type=str)
 parser.add_argument('--name', help='name for the node', type=str)
 parser.add_argument('--es_config_file_path', help='es config file path', type=str, default="/etc/elasticsearch/elasticsearch.yml")
 # parser.add_argument('--es_config_file_path', help='es config file path', type=str, default="test.yml")
-parser.add_argument('--central_config_url', help='central config url', type=str, default="http://localhost:8000")
+parser.add_argument('--central_config_url', help='central config url', type=str, default="https://dev-es-config.sepana.io")
 
 
 
