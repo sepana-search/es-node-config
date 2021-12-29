@@ -1,0 +1,12 @@
+cluster.initial_master_nodes:
+- 137.184.29.195
+cluster.name: sepana
+discovery.seed_hosts:
+- 137.184.26.195
+- 137.184.29.195
+good: love
+moving: out
+network.host: 137.184.26.195
+node.master: false
+node.name: node-1
+sepana: true
