@@ -14,5 +14,6 @@ setup(
         "typer",
         "requests",
         "pyyaml"
-    ]
+    ],
+    packages=["sepana"]
 )

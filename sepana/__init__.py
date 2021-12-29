@@ -1,0 +1,1 @@
+from sepana.main import app
