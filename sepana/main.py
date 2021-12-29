@@ -11,6 +11,7 @@ app = typer.Typer()
 ES_CONFIG_FILE_PATH = "/etc/elasticsearch/elasticsearch.yml"
 # ES_CONFIG_FILE_PATH = "test.yml"
 CENTRAL_CONFIG_URL =  "https://dev-es-config.sepana.io"
+CONFIG_FILE_PATH = "config.yml"
 
 
 def load_es_config(es_config_file_path:str=ES_CONFIG_FILE_PATH) -> Dict[str, Any]:
@@ -25,11 +26,15 @@ def load_es_config(es_config_file_path:str=ES_CONFIG_FILE_PATH) -> Dict[str, Any
 def save_es_config(data: Dict[str, Any], es_config_file_path:str=ES_CONFIG_FILE_PATH):
     with open(es_config_file_path, 'w', encoding='utf8') as outfile:
         yaml.dump(data, outfile, default_flow_style=False, allow_unicode=True)
+    with open(CONFIG_FILE_PATH, 'w', encoding='utf8') as outfile:
+        yaml.dump({"sepana-configured" : True}, outfile, default_flow_style=False, allow_unicode=True)
 
 
 def node_is_configured():
-    es_config: Dict = load_es_config()
-    return es_config.get("sepana-configured", False)
+    if Path(CONFIG_FILE_PATH).is_file():
+        with open(CONFIG_FILE_PATH, "r") as stream:
+            config_yaml = yaml.safe_load(stream)
+            return config_yaml.get("sepana-configured", False)
 
 
 def get_node_config(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL) -> Dict[str, Any]:
@@ -53,8 +58,7 @@ def get_node_config(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL) -
 
 
 def update_es_config(node_config: Dict[str, Any]):
-    node_config["sepana-configured"] = True
-    es_config: Dict = load_es_config()
+    es_config: Dict = load_es_config() or {}
     es_config.update(node_config)
     save_es_config(es_config)
 
@@ -78,18 +82,7 @@ def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
 def init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
     if node_is_configured():
         return
-    if not host:
-        host =  typer.prompt("Public ip address of the node?")
-    if not api_key:
-        api_key =  typer.prompt("PI key ?")
-    name =  typer.prompt("Node name?", default=f"node-{secrets.token_hex(6)}")
-    node_config = register(host, name, api_key)
-    if not node_config.get("cluster.name"):
-        print(node_config)
-        print("Configuration could not be completed")
-        return
-    update_es_config(node_config)
-    activate_node(host, api_key)
+    fresh_init(host, api_key)
 
 
 def register(host:str = None, name:str = None, api_key:str = None, config_url:str=CENTRAL_CONFIG_URL):
@@ -116,4 +109,19 @@ def stop():
     if stat == 0:  # if active
         subprocess.call(['sudo', 'systemctl', 'stop', 'elasticsearch'])
     print("sepana node stopped")
+    
+@app.command(help="Initialize sepana node even when it has been done before, this will setup elasticsearch configuration with new config")
+def fresh_init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
+    if not host:
+        host =  typer.prompt("Public ip address of the node?")
+    if not api_key:
+        api_key =  typer.prompt("PI key ?")
+    name =  typer.prompt("Node name?", default=f"node-{secrets.token_hex(6)}")
+    node_config = register(host, name, api_key)
+    if not node_config.get("cluster.name"):
+        print(node_config)
+        print("Configuration could not be completed")
+        return
+    update_es_config(node_config)
+    activate_node(host, api_key)
 
