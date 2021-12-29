@@ -75,11 +75,13 @@ def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
 
 
 @app.command()
-def init():
+def init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
     if node_is_configured():
         return
-    host =  typer.prompt("Public ip address of the node?")
-    api_key =  typer.prompt("PI key ?")
+    if not host:
+        host =  typer.prompt("Public ip address of the node?")
+    if not api_key:
+        api_key =  typer.prompt("PI key ?")
     name =  typer.prompt("Node name?", default=f"node-{secrets.token_hex(6)}")
     node_config = register(host, name, api_key)
     if not node_config.get("cluster.name"):
