@@ -59,7 +59,7 @@ def update_es_config(node_config: Dict[str, Any]):
     save_es_config(es_config)
 
 
-@app.command()
+@app.command(help="start sepana node")
 def start():
     stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
     if stat != 0:  # if not active
@@ -74,7 +74,7 @@ def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
         pass
 
 
-@app.command()
+@app.command(help="Initialize sepana node, this will setup elasticsearch configuration")
 def init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
     if node_is_configured():
         return
@@ -105,12 +105,12 @@ def register(host:str = None, name:str = None, api_key:str = None, config_url:st
         print("Error registering the node")
         return {}
     
-@app.command()
+@app.command(help="get a list of a sepana node")
 def clusters():
     print("get all clusters")
 
 
-@app.command() 
+@app.command(help="stop sepana node")
 def stop():
     stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
     if stat == 0:  # if active
