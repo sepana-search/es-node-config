@@ -3,32 +3,27 @@ import requests
 import yaml
 from pathlib import Path
 import subprocess
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--host', help='public ip address of the node', type=str)
-parser.add_argument('--api_key', help='Sepana API key', type=str)
-parser.add_argument('--name', help='name for the node', type=str)
-parser.add_argument('--es_config_file_path', help='es config file path', type=str, default="/etc/elasticsearch/elasticsearch.yml")
-# parser.add_argument('--es_config_file_path', help='es config file path', type=str, default="test.yml")
-parser.add_argument('--central_config_url', help='central config url', type=str, default="https://dev-es-config.sepana.io")
+import typer
+import secrets
 
 
+app = typer.Typer()
+ES_CONFIG_FILE_PATH = "/etc/elasticsearch/elasticsearch.yml"
+# ES_CONFIG_FILE_PATH = "test.yml"
+CENTRAL_CONFIG_URL =  "https://dev-es-config.sepana.io"
 
-def load_es_config() -> Dict[str, Any]:
-    args = parser.parse_args()
-    ES_CONFIG_FILE_PATH = args.es_config_file_path
-    path_copy = ES_CONFIG_FILE_PATH.replace(".yml", "") + "_copy.yml"
-    if Path(ES_CONFIG_FILE_PATH).is_file() and not Path(path_copy).is_file():
+
+def load_es_config(es_config_file_path:str=ES_CONFIG_FILE_PATH) -> Dict[str, Any]:
+    path_copy = es_config_file_path.replace(".yml", "") + "_copy.yml"
+    if Path(es_config_file_path).is_file() and not Path(path_copy).is_file():
         import shutil
-        shutil.copyfile(ES_CONFIG_FILE_PATH, path_copy)
-    with open(ES_CONFIG_FILE_PATH, "r") as stream:
+        shutil.copyfile(es_config_file_path, path_copy)
+    with open(es_config_file_path, "r") as stream:
         return yaml.safe_load(stream)
 
 
-def save_es_config(data: Dict[str, Any]):
-    args = parser.parse_args()
-    with open(args.es_config_file_path, 'w', encoding='utf8') as outfile:
+def save_es_config(data: Dict[str, Any], es_config_file_path:str=ES_CONFIG_FILE_PATH):
+    with open(es_config_file_path, 'w', encoding='utf8') as outfile:
         yaml.dump(data, outfile, default_flow_style=False, allow_unicode=True)
 
 
@@ -37,7 +32,7 @@ def node_is_configured():
     return es_config.get("sepana-configured", False)
 
 
-def get_node_config(host: str) -> Dict[str, Any]:
+def get_node_config(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL) -> Dict[str, Any]:
     # example config
     # node_config = {
     #     "discovery.seed_hosts": ["137.184.29.196", "137.184.26.195"],
@@ -47,13 +42,12 @@ def get_node_config(host: str) -> Dict[str, Any]:
     #     "node.master": False,
     #     "network.host": "137.184.29.196"
     # }
-    args = parser.parse_args()
-    headers = {'apikey': args.api_key}
+    headers = {'apikey': api_key}
     try:
-        response = requests.get(f"{args.central_config_url}/get-config?host={host}", headers=headers)
+        response = requests.get(f"{config_url}/get-config?host={host}", headers=headers)
         return response.json()
     except Exception as ex:
-        raise Exception(f"can not retrieve config from {args.central_config_url}")
+        raise Exception(f"can not retrieve config from {config_url}")
     
 
 
@@ -65,56 +59,59 @@ def update_es_config(node_config: Dict[str, Any]):
     save_es_config(es_config)
 
 
+@app.command()
 def start():
     stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
     if stat != 0:  # if not active
         subprocess.call(['sudo', 'systemctl', 'start', 'elasticsearch'])
 
 
-def activate_node(host: str):
-    args = parser.parse_args()
-    headers = {'apikey': args.api_key}
+def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
+    headers = {'apikey': api_key}
     try:
-        requests.get(f"{args.central_config_url}/activate-node?host={host}", headers=headers)
+        requests.get(f"{config_url}/activate-node?host={host}", headers=headers)
     except:
         pass
 
 
+@app.command()
 def init():
-    args = parser.parse_args()
-    host = args.host
     if node_is_configured():
         return
-    node_config = register()
+    host =  typer.prompt("Public ip address of the node?")
+    api_key =  typer.prompt("PI key ?")
+    name =  typer.prompt("Node name?", default=f"node-{secrets.token_hex(6)}")
+    node_config = register(host, name, api_key)
+    if not node_config.get("cluster.name"):
+        print(node_config)
+        print("Configuration could not be completed")
+        return
     update_es_config(node_config)
-    activate_node(host)
+    activate_node(host, api_key)
 
 
-def register():
-    args = parser.parse_args()
-    node_config = {"host": args.host}
-    if args.name:
-        node_config["name"] = args.name
+def register(host:str = None, name:str = None, api_key:str = None, config_url:str=CENTRAL_CONFIG_URL):
+    node_config = {"host": host}
+    if name:
+        node_config["name"] = name
     try:
-        headers = {'apikey': args.api_key}
-        response = requests.post(f"{args.central_config_url}/register-node", json=node_config, headers=headers)
+        headers = {'apikey': api_key}
+        response = requests.post(f"{config_url}/register-node", json=node_config, headers=headers)
         return response.json()
     except Exception as ex:
         print(ex)
         print("Error registering the node")
         return {}
     
+@app.command()
 def clusters():
-    print("register new node")
-    
+    print("get all clusters")
+
+
+@app.command() 
 def stop():
     stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
     if stat == 0:  # if active
         subprocess.call(['sudo', 'systemctl', 'stop', 'elasticsearch'])
     print("sepana node stopped")
 
-# if __name__ == "__main__":
-#     host = None
-#     if sys.argv:
-#         host = sys.argv[0]
-#     setup_node()
