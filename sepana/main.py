@@ -3,7 +3,7 @@ import requests
 import subprocess
 import typer
 import secrets
-from config import Config
+from sepana.config import Config
 
 
 app = typer.Typer()
