@@ -1,40 +1,18 @@
 from typing import Any, Dict
 import requests
-import yaml
-from pathlib import Path
 import subprocess
 import typer
 import secrets
+from config import Config
 
 
 app = typer.Typer()
-ES_CONFIG_FILE_PATH = "/etc/elasticsearch/elasticsearch.yml"
-# ES_CONFIG_FILE_PATH = "test.yml"
-CENTRAL_CONFIG_URL =  "https://dev-es-config.sepana.io"
-CONFIG_FILE_PATH = "config.yml"
-
-
-def load_es_config(es_config_file_path:str=ES_CONFIG_FILE_PATH) -> Dict[str, Any]:
-    path_copy = es_config_file_path.replace(".yml", "") + "_copy.yml"
-    if Path(es_config_file_path).is_file() and not Path(path_copy).is_file():
-        import shutil
-        shutil.copyfile(es_config_file_path, path_copy)
-    with open(es_config_file_path, "r") as stream:
-        return yaml.safe_load(stream)
-
-
-def save_es_config(data: Dict[str, Any], es_config_file_path:str=ES_CONFIG_FILE_PATH):
-    with open(es_config_file_path, 'w', encoding='utf8') as outfile:
-        yaml.dump(data, outfile, default_flow_style=False, allow_unicode=True)
-    with open(CONFIG_FILE_PATH, 'w', encoding='utf8') as outfile:
-        yaml.dump({"sepana-configured" : True}, outfile, default_flow_style=False, allow_unicode=True)
-
-
-def node_is_configured():
-    if Path(CONFIG_FILE_PATH).is_file():
-        with open(CONFIG_FILE_PATH, "r") as stream:
-            config_yaml = yaml.safe_load(stream)
-            return config_yaml.get("sepana-configured", False)
+config = Config()
+ES_CONFIG_FILE_PATH = config.get("es_central_config_path")
+ES_CONFIG_FILE_PATH = "test.yml"
+CENTRAL_CONFIG_URL =  config.get("central_config_url")
+NODE_IS_CONFIGURED = config.get("sepana_configured")
+es_config = Config(ES_CONFIG_FILE_PATH)
 
 
 def get_node_config(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL) -> Dict[str, Any]:
@@ -53,14 +31,6 @@ def get_node_config(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL) -
         return response.json()
     except Exception as ex:
         raise Exception(f"can not retrieve config from {config_url}")
-    
-
-
-
-def update_es_config(node_config: Dict[str, Any]):
-    es_config: Dict = load_es_config() or {}
-    es_config.update(node_config)
-    save_es_config(es_config)
 
 
 @app.command(help="start sepana node")
@@ -80,7 +50,7 @@ def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
 
 @app.command(help="Initialize sepana node, this will setup elasticsearch configuration")
 def init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
-    if node_is_configured():
+    if NODE_IS_CONFIGURED:
         return
     fresh_init(host, api_key)
 
@@ -122,6 +92,11 @@ def fresh_init(host:str = typer.Option(default=None, help="Public ip address of 
         print(node_config)
         print("Configuration could not be completed")
         return
-    update_es_config(node_config)
+    es_config.update(node_config)
+    config.update({"sepana_configured" : True})
     activate_node(host, api_key)
 
+@app.command(help="Update node config")
+def update_config(es_central_config_path:str = typer.Option(default=ES_CONFIG_FILE_PATH, help="Change path to es configuration file"), 
+                  central_config_url:str = typer.Option(default=CENTRAL_CONFIG_URL, help="Change central config url")):
+    config.update({"es_central_config_path": es_central_config_path, "central_config_url": central_config_url})

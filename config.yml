@@ -1,0 +1,3 @@
+central_config_url: https://dev-es-config.sepana.io
+es_central_config_path: /etc/elasticsearch/elasticsearch.yml
+sepana_configured: false
