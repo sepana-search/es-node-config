@@ -9,7 +9,7 @@ from sepana.config import Config
 app = typer.Typer()
 config = Config()
 ES_CONFIG_FILE_PATH = config.get("es_central_config_path")
-ES_CONFIG_FILE_PATH = "test.yml"
+# ES_CONFIG_FILE_PATH = "test.yml"
 CENTRAL_CONFIG_URL =  config.get("central_config_url")
 NODE_IS_CONFIGURED = config.get("sepana_configured")
 es_config = Config(ES_CONFIG_FILE_PATH)
