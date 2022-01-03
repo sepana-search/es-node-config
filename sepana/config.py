@@ -16,6 +16,8 @@ class Config(dict):
             with open(config_file_path, "r") as stream:
                 config_yaml = yaml.safe_load(stream)
                 return config_yaml
+        else:
+            print(f"Can not load {config_file_path} -> not a file")
         return {}
 
     def update(self, config:Dict[str, Union[str, bool]]) -> Dict[str, Union[str, bool]]:
