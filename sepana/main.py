@@ -97,6 +97,6 @@ def fresh_init(host:str = typer.Option(default=None, help="Public ip address of 
     activate_node(host, api_key)
 
 @app.command(help="Update node config")
-def update_config(es_central_config_path:str = typer.Option(default=ES_CONFIG_FILE_PATH, help="Change path to es configuration file"), 
+def update_config(es_config_path:str = typer.Option(default=ES_CONFIG_FILE_PATH, help="Change path to es configuration file"), 
                   central_config_url:str = typer.Option(default=CENTRAL_CONFIG_URL, help="Change central config url")):
-    config.update({"es_central_config_path": es_central_config_path, "central_config_url": central_config_url})
+    config.update({"es_central_config_path": es_config_path, "central_config_url": central_config_url})
