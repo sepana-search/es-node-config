@@ -15,5 +15,8 @@ setup(
         "requests",
         "pyyaml"
     ],
-    packages=["sepana"]
+    packages=["sepana"],
+    package_data = {
+    'sepana': ['*.yml']
+    }
 )
