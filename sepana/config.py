@@ -3,7 +3,7 @@ import yaml
 from pathlib import Path
 import os
 
-CONFIG_FILE_PATH = "./config.yml"
+CONFIG_FILE_PATH = os.path.abspath("./config.yml")
 
 class Config(dict):
     
