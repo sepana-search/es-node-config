@@ -1,6 +1,7 @@
 from typing import Dict, Union
 import yaml
 from pathlib import Path
+import os
 
 CONFIG_FILE_PATH = "./config.yml"
 
@@ -12,7 +13,7 @@ class Config(dict):
     
     @staticmethod
     def load(config_file_path:str) -> Dict[str, Union[str, bool]]:
-        if Path(config_file_path).is_file():
+        if Path(os.path.abspath(config_file_path)).is_file():
             with open(config_file_path, "r") as stream:
                 config_yaml = yaml.safe_load(stream)
                 return config_yaml
