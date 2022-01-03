@@ -2,7 +2,7 @@ from typing import Dict, Union
 import yaml
 from pathlib import Path
 
-CONFIG_FILE_PATH = "config.yml"
+CONFIG_FILE_PATH = "sepana/config.yml"
 
 class Config(dict):
     
