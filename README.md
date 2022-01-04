@@ -9,6 +9,10 @@ This is used to configure elasticsearch node.
 ## Installation
 pip install git+https://github.com/sepana-search/es-node-config
 
+or
+
+pipenv install git+https://github.com/sepana-search/es-node-config#egg=sepanactl
+
 ## Usage
 After installation. There are couple of comand line script available for you like; 
 - sepanactl --help => for available commands
