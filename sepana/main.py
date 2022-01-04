@@ -9,13 +9,25 @@ from sepana.config import Config
 app = typer.Typer()
 config = Config()
 ES_CONFIG_FILE_PATH = config.get("es_central_config_path")
-# ES_CONFIG_FILE_PATH = "test.yml"
 CENTRAL_CONFIG_URL =  config.get("central_config_url")
 NODE_IS_CONFIGURED = config.get("sepana_configured")
 es_config = Config(ES_CONFIG_FILE_PATH)
 
 
-def get_node_config(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL) -> Dict[str, Any]:
+def mount_docker_es_conf_file():
+    if not ES_CONFIG_FILE_PATH:
+        return
+    docker_compose = Config("docker-compose.yml")
+    for value in docker_compose.get("services", {}).values():
+        if "docker.elastic.co/elasticsearch" in value.get("image"):
+            volumes = value.get("volumes", [])
+            volumes.append(f"{ES_CONFIG_FILE_PATH}:{config.get('docker_es_config_path')}")
+            value["volume"] = volumes
+    docker_compose.update({"services": docker_compose.get("services")})
+    print(docker_compose)
+
+
+def get_node_config(host: str, api_key:str, conf_type:str = "default", config_url:str=CENTRAL_CONFIG_URL) -> Dict[str, Any]:
     # example config
     # node_config = {
     #     "discovery.seed_hosts": ["137.184.29.196", "137.184.26.195"],
@@ -27,7 +39,7 @@ def get_node_config(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL) -
     # }
     headers = {'apikey': api_key}
     try:
-        response = requests.get(f"{config_url}/get-config?host={host}", headers=headers)
+        response = requests.get(f"{config_url}/get-config?host={host}&conf_type={conf_type}", headers=headers)
         return response.json()
     except Exception as ex:
         raise Exception(f"can not retrieve config from {config_url}")
@@ -48,11 +60,11 @@ def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
         pass
 
 
-@app.command(help="Initialize sepana node, this will setup elasticsearch configuration")
-def init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
+@app.command(help="Initialize sepana node, this will setup elasticsearch configurations")
+def init(host:str = typer.Option(default=None, help="Public ip address of the node"), conf_type:str = typer.Option(default="default", help="Configuration type docker or default"), api_key:str = typer.Option(default=None, help="API key")):
     if NODE_IS_CONFIGURED:
         return
-    fresh_init(host, api_key)
+    fresh_init(host, api_key, conf_type)
 
 
 def register(host:str = None, name:str = None, api_key:str = None, config_url:str=CENTRAL_CONFIG_URL):
@@ -68,6 +80,7 @@ def register(host:str = None, name:str = None, api_key:str = None, config_url:st
         print("Error registering the node")
         return {}
     
+    
 @app.command(help="get a list of a sepana node")
 def clusters():
     print("get all clusters")
@@ -81,13 +94,14 @@ def stop():
     print("sepana node stopped")
     
 @app.command(help="Initialize sepana node even when it has been done before, this will setup elasticsearch configuration with new config")
-def fresh_init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
+def fresh_init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key"), conf_type:str = typer.Option(default="default", help="Configuration type docker or default")):
     if not host:
         host =  typer.prompt("Public ip address of the node?")
     if not api_key:
         api_key =  typer.prompt("PI key ?")
     name =  typer.prompt("Node name?", default=f"node-{secrets.token_hex(6)}")
-    node_config = register(host, name, api_key)
+    register(host, name, api_key)
+    node_config = get_node_config(host, api_key, conf_type)
     if not node_config.get("cluster.name"):
         print(node_config)
         print("Configuration could not be completed")
@@ -95,6 +109,8 @@ def fresh_init(host:str = typer.Option(default=None, help="Public ip address of 
     es_config.update(node_config)
     config.update({"sepana_configured" : True})
     activate_node(host, api_key)
+    if conf_type == "docker":
+        mount_docker_es_conf_file()
 
 @app.command(help="Update node config")
 def update_config(es_config_path:str = typer.Option(default=ES_CONFIG_FILE_PATH, help="Change path to es configuration file"), 

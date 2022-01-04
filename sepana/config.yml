@@ -1,3 +1,4 @@
 central_config_url: https://dev-es-config.sepana.io
 es_central_config_path: /etc/elasticsearch/elasticsearch.yml
+docker_es_config_path: /usr/share/elasticsearch/config/elasticsearch.yml
 sepana_configured: false
