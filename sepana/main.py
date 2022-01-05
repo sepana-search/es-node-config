@@ -47,9 +47,12 @@ def get_node_config(host: str, api_key:str, conf_type:str = "default", config_ur
 
 @app.command(help="start sepana node")
 def start():
-    stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
-    if stat != 0:  # if not active
-        subprocess.call(['sudo', 'systemctl', 'start', 'elasticsearch'])
+    if config.get("conf_type", "").lower() == "docker":
+        subprocess.call(["docker-compose", "up"])
+    else:
+        stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
+        if stat != 0:  # if not active
+            subprocess.call(['sudo', 'systemctl', 'start', 'elasticsearch'])
 
 
 def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
@@ -88,10 +91,12 @@ def clusters():
 
 @app.command(help="stop sepana node")
 def stop():
-    stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
-    if stat == 0:  # if active
-        subprocess.call(['sudo', 'systemctl', 'stop', 'elasticsearch'])
-    print("sepana node stopped")
+    if config.get("conf_type", "").lower() == "docker":
+        subprocess.call(["docker-compose", "down"])
+    else:
+        stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
+        if stat == 0:  # if active
+            subprocess.call(['sudo', 'systemctl', 'stop', 'elasticsearch'])
     
 @app.command(help="Initialize sepana node even when it has been done before, this will setup elasticsearch configuration with new config")
 def fresh_init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key"), conf_type:str = typer.Option(default="default", help="Configuration type docker or default")):
@@ -111,7 +116,7 @@ def fresh_init(host:str = typer.Option(default=None, help="Public ip address of 
         print("Configuration could not be completed")
         return
     es_config.update(node_config)
-    config.update({"sepana_configured" : True})
+    config.update({"sepana_configured" : True, "conf_type":conf_type})
     activate_node(host, api_key)
     if conf_type == "docker":
         mount_docker_es_conf_file()
