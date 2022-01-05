@@ -14,7 +14,7 @@ FILE=docker-compose.yml
 if [ -f "$FILE" ]; then
     echo "$FILE exists."
 else 
-    curl -LJO https://raw.github.com/sepana-search/es-node-config/main/template-docker-compose.yml -o docker-compose.yml
+    curl -LJO https://raw.github.com/sepana-search/es-node-config/main/docker-compose.yml
 fi
 
 sepanactl init
