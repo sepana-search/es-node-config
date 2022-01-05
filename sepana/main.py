@@ -64,7 +64,7 @@ def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
 
 
 @app.command(help="Initialize sepana node, this will setup elasticsearch configurations")
-def init(host:str = typer.Option(default=None, help="Public ip address of the node"), conf_type:str = typer.Option(default="default", help="Configuration type docker or default"), api_key:str = typer.Option(default=None, help="API key")):
+def init(host:str = typer.Option(default=None, help="Public ip address of the node"), conf_type:str = typer.Option(default=None, help="Configuration type docker or default"), api_key:str = typer.Option(default=None, help="API key")):
     if NODE_IS_CONFIGURED:
         return
     fresh_init(host, api_key, conf_type)
