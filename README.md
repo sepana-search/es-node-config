@@ -38,7 +38,7 @@ curl -o- https://raw.githubusercontent.com/sepana-search/es-node-config/main/ins
 
 ## Test Your Intallation
 
-curl "http://IP_ADDRESS:9200/_cat/nodes?v=true&pretty"
+curl "http://localhost:9200/_cat/nodes?v=true&pretty"
 
 
 ## Requirements
