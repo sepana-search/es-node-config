@@ -28,3 +28,6 @@ Or just do
 
   sepanactl init --host=137.184.29.196 --api-key=5e8b2cbf-f762-4a75-97e2-58fa9df8a84a --conf-type=docker
 
+
+## Script Installation - Testing
+curl -o- https://raw.githubusercontent.com/sepana-search/es-node-config/main/install.sh | bash -x
