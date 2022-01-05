@@ -50,7 +50,7 @@ def get_node_config(host: str, api_key:str, conf_type:str = "default", config_ur
 @app.command(help="start sepana node")
 def start():
     if config.get("conf_type", "").lower() == "docker":
-        subprocess.call(["docker-compose", "up"])
+        subprocess.call(["docker-compose", "up", "-d"])
     else:
         stat = subprocess.call(["systemctl", "is-active", "--quiet", "elasticsearch"])
         if stat != 0:  # if not active
