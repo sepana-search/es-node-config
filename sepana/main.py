@@ -99,13 +99,14 @@ def stop():
             subprocess.call(['sudo', 'systemctl', 'stop', 'elasticsearch'])
     
 @app.command(help="Initialize sepana node even when it has been done before, this will setup elasticsearch configuration with new config")
-def fresh_init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key")):
+def fresh_init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key"), conf_type:str = typer.Option(default=None, help="Configuration type docker or default")):
     if not host:
         host =  typer.prompt("Public ip address of the node?")
     if not api_key:
         api_key =  typer.prompt("PI key ?")
     name =  typer.prompt("Node name?", default=f"node-{secrets.token_hex(6)}")
-    conf_type = typer.prompt("Configuration type default or docker", default="default")
+    if not conf_type:
+        conf_type = typer.prompt("Configuration type default or docker", default="default")
     es_config_path =  typer.prompt("Elasticsearh config file path?", default=f"{ES_CONFIG_FILE_PATH}")
     if ES_CONFIG_FILE_PATH != es_config_path:
         config.update({"es_central_config_path": es_config_path})
