@@ -22,7 +22,7 @@ def mount_docker_es_conf_file():
         if "docker.elastic.co/elasticsearch" in value.get("image"):
             volumes = value.get("volumes", [])
             volumes.append(f"{config.get('es_central_config_path')}:{config.get('docker_es_config_path')}")
-            value["volume"] = volumes
+            value["volumes"] = volumes
     docker_compose.update({"services": docker_compose.get("services")})
 
 
