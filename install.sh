@@ -17,5 +17,3 @@ if [ -f "$FILE" ]; then
 else 
     curl -LJO https://raw.github.com/sepana-search/es-node-config/main/docker-compose.yml
 fi
-
-sepanactl init
