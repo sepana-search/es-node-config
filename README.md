@@ -30,4 +30,7 @@ Or just do
 
 
 ## Script Installation - Testing
+
+For fresh installation with no docker on the system
+
 curl -o- https://raw.githubusercontent.com/sepana-search/es-node-config/main/install.sh | bash -x
