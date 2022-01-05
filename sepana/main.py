@@ -15,16 +15,15 @@ es_config = Config(ES_CONFIG_FILE_PATH)
 
 
 def mount_docker_es_conf_file():
-    if not ES_CONFIG_FILE_PATH:
+    if not config.get("es_central_config_path"):
         return
     docker_compose = Config("docker-compose.yml")
     for value in docker_compose.get("services", {}).values():
         if "docker.elastic.co/elasticsearch" in value.get("image"):
             volumes = value.get("volumes", [])
-            volumes.append(f"{ES_CONFIG_FILE_PATH}:{config.get('docker_es_config_path')}")
+            volumes.append(f"{config.get('es_central_config_path')}:{config.get('docker_es_config_path')}")
             value["volume"] = volumes
     docker_compose.update({"services": docker_compose.get("services")})
-    print(docker_compose)
 
 
 def get_node_config(host: str, api_key:str, conf_type:str = "default", config_url:str=CENTRAL_CONFIG_URL) -> Dict[str, Any]:
