@@ -109,7 +109,10 @@ def fresh_init(host:str = typer.Option(default=None, help="Public ip address of 
     name =  typer.prompt("Node name?", default=f"node-{secrets.token_hex(6)}")
     if not conf_type:
         conf_type = typer.prompt("Configuration type default or docker", default="default")
-    es_config_path =  typer.prompt("Elasticsearh config file path?", default=f"{ES_CONFIG_FILE_PATH}")
+    if conf_type == "docker":
+        es_config_path = "elasticsearch.yml"
+    else:
+        es_config_path =  typer.prompt("Elasticsearh config file path?", default=f"{ES_CONFIG_FILE_PATH}")
     if ES_CONFIG_FILE_PATH != es_config_path:
         config.update({"es_central_config_path": es_config_path})
         es_config = Config(es_config_path)
