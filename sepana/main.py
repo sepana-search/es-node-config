@@ -4,6 +4,7 @@ import subprocess
 import typer
 import secrets
 from sepana.config import Config
+from requests import get
 
 
 app = typer.Typer()
@@ -12,7 +13,8 @@ ES_CONFIG_FILE_PATH = config.get("es_central_config_path")
 CENTRAL_CONFIG_URL =  config.get("central_config_url")
 NODE_IS_CONFIGURED = config.get("sepana_configured")
 es_config = Config(ES_CONFIG_FILE_PATH)
-
+HOST_IP = get('https://api.ipify.org').content.decode('utf8')
+TESTING_API_KEY = "5e8b2cbf-f762-4a75-97e2-58fa9df8a84a"
 
 def mount_docker_es_conf_file():
     if not config.get("es_central_config_path"):
@@ -66,13 +68,13 @@ def activate_node(host: str, api_key:str, config_url:str=CENTRAL_CONFIG_URL):
 
 
 @app.command(help="Initialize sepana node, this will setup elasticsearch configurations")
-def init(host:str = typer.Option(default=None, help="Public ip address of the node"), conf_type:str = typer.Option(default=None, help="Configuration type docker or default"), api_key:str = typer.Option(default=None, help="API key")):
+def init(host:str = typer.Option(default=HOST_IP, help="Public ip address of the node"), conf_type:str = typer.Option(default=None, help="Configuration type docker or default"), api_key:str = typer.Option(default=TESTING_API_KEY, help="API key")):
     if NODE_IS_CONFIGURED:
         return
     fresh_init(host, api_key, conf_type)
 
 
-def register(host:str = None, name:str = None, api_key:str = None, config_url:str=CENTRAL_CONFIG_URL):
+def register(host:str = HOST_IP, name:str = None, api_key:str = None, config_url:str=CENTRAL_CONFIG_URL):
     node_config = {"host": host}
     if name:
         node_config["name"] = name
@@ -101,7 +103,7 @@ def stop():
             subprocess.call(['sudo', 'systemctl', 'stop', 'elasticsearch'])
     
 @app.command(help="Initialize sepana node even when it has been done before, this will setup elasticsearch configuration with new config")
-def fresh_init(host:str = typer.Option(default=None, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key"), conf_type:str = typer.Option(default=None, help="Configuration type docker or default")):
+def fresh_init(host:str = typer.Option(default=HOST_IP, help="Public ip address of the node"), api_key:str = typer.Option(default=None, help="API key"), conf_type:str = typer.Option(default=None, help="Configuration type docker or default")):
     if not host:
         host =  typer.prompt("Public ip address of the node?")
     if not api_key:
